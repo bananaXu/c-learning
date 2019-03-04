@@ -1,0 +1,254 @@
+linux多用户多任务的操作系统
+
+
+进程控制块PCB
+每个进程在内核中都有一个进程控制块(PCB)来维护进程相关的信息，linux内核的进程控制块是task_struct结构体
+/usr/src/linux-header-3.16.0-30/include/linux/sched.h文件中可以查看struct task_struct结构体定义。
+其内部成员很多，重点掌握以下部分:
+	进程id。系统中每个进程有唯一的id，在C语言中用pid_t类型表示，其实就是一个非负整数。
+	进程的状态，有就绪、运行、挂起、停止等状态。
+	进程切换时需要保存和恢复的一些cpu寄存器。
+	描述虚拟地址空间的信息。
+	描述控制终端的信息。
+	当前工作目录。
+	umask掩码。
+	文件描述符表，包含很多指向file结构体的指针。
+	和信号相关的信息。
+	用户id和组id。
+	会话(session)和进程组。
+	进程可以使用的资源上限(Resource Limit)
+进程状态
+
+进程控制
+	fork函数
+		创建一个子进程
+	getuid函数
+		uid_t getuid(void) // 获取当前进程使用用户
+		uid_t geteuid(void) // 获取当前进程有效用户
+	getgid函数
+		gid_t getgid(void) // 获取当前进程使用用户组
+		gid_t getegid(void) // 获取当前进程有效用户组
+		
+进程共享
+	父子进程之间在fork后，有哪些相同，哪些相异之处？
+	刚fork之后：
+		父子相同处：全局变量、.data、.text、栈、堆、环境变量、用户id、宿主目录、进程工作目录、信号处理方式...
+		父子不同处：1、进程id 2、fork 3、父进程id 4、进程运行时间 5、闹钟(定时器) 6、为决信号集
+	似乎，子进程复制了父进程0-3G用户共享空间内容，以及父进程的PCB，但pid不同，真的每fork一个子进程就需要将父进程的
+	0-3G地址空间完全拷贝一份，然后映射至物理内存吗？
+	当然不是，子进程遵循读时共享写时复制的原则，这样设计，无论子进程执行父进程的逻辑还是执行自己的逻辑都能节省内存开销
+	父子进程共享：1、文件描述符(打开文件的结构体) 2、mmap建立的映射空间(进程间信号详解)
+	特别的：fork之后先执行父进程还是先执行子进程不确定，取决于内核使用的调度算法。
+
+gdb调试：
+	使用gdb调试时gdb只能跟踪一个进程，可以再fork函数之前，通过指令设置gdb调试父进程还是子进程，默认跟踪父进程。
+	set follow-fork-mode child 命令设置gdb在fork之后跟踪子进程
+	set follow-fork-mode parent 命令设置gdb在fork之后跟踪父进程
+	一定要在fork之前调用才有效
+
+环境变量：
+	环境变量，是指在操作系统中用来指定操作系统运行环境的一些参数。通常具备以下特征：
+	①字符串(本质)②有统一格式：名=值[:值]③值用来描述进程环境信息。
+	存储形式：与命令行参数类似。char*[]数组，数组名envirn，内部存储字符串，NULL作为哨兵结尾。
+	使用形式：与命令行参数类似。
+	加载位置：与命令行参数类似。位于用户区，高于stack的起始位置。
+	引入环境变量表：须声明环境变量。extern char**environ；
+	练习：打印当前进程的所有环境变量。
+	
+常见环境变量
+	path
+		可执行文件的搜索路径，ls命令也是一个程序，执行它不需要提供完整的路径名/bin/ls,然而	通常我们执行
+		当前目录下的程序a.out却需要提供完整的路径名./a.out，这是path环境变量的值里面包含了ls命令所在的目
+		录/bin，却不包含a.out所在的目录，path环境变量的值可以包含多个目录，用:号隔开。在shell中用echo命令
+		可以查看这个环境变量的值：
+			$echo $path
+	shell
+		当前shell，它的值通常是/bin/bash.
+	term
+		当前终端类型，在图形界面终端下它的值通常是xterm，终端类型决定了一些程序的输出显示方式，比如图形界
+		面终端可以显示汉字，而字符终端一般不行。
+	lang
+		语言和locale，决定了字符编码以及时间，货币等信息的显示格式
+	home
+		当前用户主目录的路径，很多程序需要在目录下保存配置文件，使得每个用户在运行该程序时都有自己的一套配置。
+	getenv函数
+		获取环境变量值
+			char* getenv(const char* name)成功：返回环境变量值，失败：NULL(name不存在)
+	setenv函数
+		设置环境变量的值
+			int setenv(const char* name, const char* value, int overwrite)成功：0， 失败：-1
+			参数overwrite取值：1：覆盖原环境变量
+							   0：不覆盖(该参数常用于设置新环境变量)
+	unsetenv函数
+		删除环境变量name的定义
+		int unsetenv(const char* name)成功：0，失败：-1
+		注意事项：name不存在仍返回0，当name命名为"ABC="时会出错
+		
+exec函数族：
+		fork创建子进程后执行的是和父进程相同的程序(但有可能执行不同的代码分支)，子进程往往要调用一种
+	exec函数以执行另一个程序。当进程调用一种exec函数时，该进程的用户空间代码和数据完全被新程序替换，
+	从新程序的启动例程开始执行。调用exec并不创建新进程，所以调用exec前后该进程的id并未改变。
+		将当前进程的.text、.data替换为所要加载的程序的.text、.data，然后让进程从新的.text第一条指令开
+	始执行，但进程id不变，换核不换壳。
+	其实有六种以exec开头的函数，统称exec函数
+	int execl(const char* path, const char* arg,...);
+	int execlp(const char*file, const char* arg, ...);
+	int execle(const char*path, const char*arg, ..., char* const envp[]);
+	int execv(const char* path, const char* argv[]);
+	int execvp(const char* file, const char* argv[]);
+	int execve(const char* path, char* const argv[], char* const envp[]);
+	execlp函数：
+		加载一个子进程，借助path环境变量
+		int execlp(const char* file, const char* arg, ...); 成功：无返回，失败：-1
+		参数1：要加载的函数的名字，该函数需要配合PATH环境变量来使用，当path中所有目录搜索后没有参数1，则
+		出错返回
+		该函数通常用来调用系统函数，如：ls、date、cp、cat等命令。
+	execl函数：
+		加载一个进程，通过路径+程序名来加载
+		int execl(const char* path, const char* arg, ...); 成功：无返回，失败：-1
+		对比execlp函数，如加载"ls"命令带有-l，-F参数
+		execlp("ls", "ls", "-l", "-F", NULL); 使用程序名在PATH中搜索
+		execl("/bin/ls", "ls", "-l", "-F", NULL); 使用参数1所给出的绝对路径搜索
+孤儿进程
+	父进程比子进程先结束，孤儿进程父进程将变为init进程
+僵尸进程
+	进程终止，父进程尚未回收，子进程残留资源(PCB)存放于内核中，变成僵尸进程
+	*僵尸进程不能用kill命令清除，因为kill命令是用来结束进程，而僵尸进程已终止
+wait函数
+	父进程调用wait函数可以回收子进程终止信息，该函数有三个功能：
+		1、阻塞等待子进程退出
+		2、回收子进程残留信息
+		3、获取子进程结束状态(退出原因)
+		pid_t wait(int *status);成功：情调的子进程id，失败：-1(没有子进程)
+		可借助宏函数来进一步判断进程终止具体原因
+		1、WIFEIXTED(status)为非0 ->进程正常结束
+		   WEIXTSTATUS(status)如果上宏为真，使用此宏，获取进程退出状态(exit的参数)
+		2、WIFSIGNALED(status)为非0 ->进程异常终止
+	       WTERMSIG(status)如果上宏为真，使用此宏，获得使进程终止的那个信号的编号
+		*3、WIFSTOPPED(status)为非0 ->进程处于暂停状态
+		    WSTOPSIG(status)如果上宏为真，使用此宏，取得使进程暂停的那个信号的编号
+			WIFCONTINUED(status)为真 ->进程暂停后已经继续运行
+waitpid函数
+	pid_t waitpid(pid_t pid, int *status, int options);成功：返回清理掉的子进程id，失败：-1(无子进程)特殊参数和返回情况
+		参数pid:
+			>0 回收指定id子进程
+			-1 回收任意子进程(相当于wait)
+			0 回收和当前调用waitpid一个组的所有子进程
+			<-1 回收指定进程组内的任意子进程
+		返回0：参数3为WNOHANG,且子进程正在运行
+进程间通信IPC(InterPorcess communication)
+	在进程间完成数据传递需要借助操作系统提供特殊的方法，如：文件、管道、信号、共享内存、消息队列、套接字、命名管道等。
+	随着计算机的蓬勃发展，一些方法由于自身设计缺陷被淘汰或者弃用。现今常用的进程间通信方式有：
+	1、管道(使用最简单)
+	2、信号(开销最小)
+	3、共享映射区(无血缘关系)
+	4、本地套接字(最稳定)
+	管道：
+		pipe
+		管道一般读写行为
+	fifo:(有名管道)
+		用于非血缘关系进程间通信
+	共享内存：
+		mmap
+		函数的参数使用注意事项
+		用于非血缘关系进程间通信
+	管道的概念：
+		管道是一种最基本的IPC机制，作用于有血缘关系的进程之间，完成数据传递，调用pipe函数即可创建一个管道，特质如下：
+		1、其本质是一个伪文件(实为内核缓冲区)
+		2、由两个文件描述符引用，一个表示读端，一个表示写端
+		3、规定数据从管道的写端流入管道，从读端流出
+		管道原理：管道实为内核使用环形队列机制，借助内核缓冲区(4k)实现
+		管道的局限性：
+		1、数据自己读不能自己写
+		2、数据一旦被读走，便不在管道中存在，不可反复读取
+		3、由于管道采用半双工通信方式，因此，数据只能在一个方向上流动
+		4、只能在有公共祖先的进程间使用管道
+		常见的通信方式有：单工通信、半双工通信、全双工通信
+	pipe函数
+		int pipe(int pipefd[2]); 成功：0 失败：-1 设置erron
+	管道读写行为
+		读管道：管道中有数据->read返回实际读到的字节数
+				管道中无数据->写端完全关闭：read返回0
+							->仍有写端打开：阻塞等待
+		写管道：读端全关闭->进程异常终止(SIGPIPE信号)
+				有读端打开->管道未满：写数据，返回写入字节数
+						  ->管道已满：阻塞(少见)
+		父子进程间通信ls | wc -l
+		兄弟进程间通信
+	fifo函数
+		int mkfifo(const char *pathname, mode_t mode);
+		pathname:一个linux路径名它是fifo的名字。即每个fifo与一个路径名相对应。
+		mode：指定的文件权限位，即创建fifo时，指定用户的访问权限，有以下值：S_IRUSR， S_IWUSR， S_IRGRP，S_IWGRP，S_IROTH，S_IWOTH。	mkfifo函数默认指定O_CREATO_EXECL方式创建FIFO，如果创建成功，直接返回0。如果FIFO已经存在，则创建失败，会返回-1并且errno置为EEXIST。
+		对于其他错误，则置响应的errno值；	当创建一个FIFO后，它必须以只读方式打开或者只写方式打开，所以可以用open函数，当然也可以使用标准的文件I/O打开函数，例如fopen来打开。
+		由于FIFO是半双工的，所以不能够同时打开来读和写。	其实一般的文件I/O函数，如read，write，close，unlink都可用于FIFO。对于管道和FIFO的write操作总是会向末尾添加数据，而对他们的read则
+		总是会从开头数据，所以不能对管道和FIFO中间的数据进行操作，因此对管道和FIFO使用lseek函数，是错误的，会返回ESPIPE错误。
+		mkfifo的一般使用方式是：通过mkfifo创建FIFO，然后调用open，以读或者写的方式之一打开FIFO，然后进行数据通信。
+	共享内存
+		1、	mmap函数：
+				void *mmap(void *adrr, size_t length, int prot, int flags, int fd, off_t offset); 
+			参数：
+				adrr: 建立映射区的首地址，由linux内核指定，使用时，直接传递NULL
+				length: 预创建映射区的大小
+				prot: 映射区权限PROT_READ、PROT_WRITE、PROT_READ|PROT_WRITE
+				flags: 标志位参数(常用于设定更新物理区域、设置共享、创建匿名映射区)
+					   MAP_SHARED: 会将映射区所做的操作反映到物理设备(磁盘)上
+					   MAP_PRIVATE: 映射区所做的操作不会反映到物理设备
+				fd: 用来建立映射区的文件描述符
+				offset: 映射文件的偏移(4k的整数倍)
+			返回值：
+				成功: 返回创建的映射区首地址，失败: MAP_FAILED宏
+		2、	借助共享内存放磁盘文件
+			借助指针访问磁盘文件
+		3、	父子进程、血缘关系进程 通信
+		4、	匿名映射区
+			通过文件创建一个映射区，创建好了再unlink、close掉，很麻烦，linux系统给我们提供了匿名映射区的方法，无需再依赖一个文件即可创建映射区，同样需借助标志位参数flags来指定
+			使用MAP_ANONYMOUS(或MAP_ANON)，如：
+			int *p = mmap(NULL, 4, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+			需注意的是，MAP_ANONYMOUS和MAP_ANON这两个宏是linux操作系统特有的宏，在类Unix系统中如无该宏定义，可使用如下两步来完成匿名映射区的建立
+			1、fd = open("/dev/zero", O_RDWR);
+			2、p = mmap(NULL, size, PROT_READ|PROT_WRITE, MMAP_SHAREd, fd, 0);
+		5、 无血缘关系进程间mmap通信
+			使用同一文件创建映射区
+			指定MAP_SHARED
+			可多端读多端写
+		6、 munmap()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,363 @@
+ls -a 查看全部
+ls -l 详细信息
+ls -la或ls -al包括隐藏文件的详细信息
+文件类型 普通文件 -
+		 目录 d
+		 衔接符号 l
+		 块设备 b
+		 字符设备 c
+		 socket文件 s
+		 管道 p
+d    r w x    r - x    r - -    2     itcast    itcast    4096     3月23 2015     music
+文     所	    同       其     文		所  	  所	   占							
+件	   有       组       他		件		有        属	   用
+类     者       用       人		的		者        的	   的
+型				户				硬				  组	   存
+								链						   储
+								接						   空
+								数						   间
+
+netstat -apn 查看端口状态
+strace ./可执行文件 追踪文件执行过程中使用的系统调用有哪些
+pwd 查看当前位置
+mkdir dirName 创建目录
+mkdir dir/dir/dir -p 创建复合目录
+rmdir dirName 删除空目录
+rm -r dirName 删除目录
+rm fileName 删除文件
+rm -ri 带提示删除
+touch fileName 创建一个文件
+cp 拷贝文件，如果文件名不存在，则创建新文件，如果存在，覆盖原文件
+cp -r 拷贝文件夹，如果文件夹名不存在，创建新文件夹，如果存在，将内容拷贝到文件夹里面
+mv 目录名存在，移动到目录里，不存在则重命名文件
+ln -s 文件绝对路径 快捷键名   创建快捷键(软链接)
+ln 文件路径 快捷键名 创建硬链接(只有文件才能创建)
+which 命令 查看命令所在的位置
+whoami 查看当前用户
+chown 所有者 文件名 修改文件所有者
+chown 所有着:所属的组 文件名 修改文件所有者和所属的组
+chgrp 修改文件所属的组
+sudo mount deviceName /mnt 手动挂载
+sudo umount /mnt 卸载设备
+sudo fdisk -l 查看设备名字
+man man 参考手册
+alias 设置或查看别名
+echo
+$ 从变量中取值
+poweroff 关机
+reboot 重启
+shutdown -r 重启
+shutdown -h 关机
+shutdown -c 取消
+
+1、按文件属性查找
+	find 查找目录 -name “文件名(*?通配符)” 在目录里面按文件名字查找文件
+	find 查找目录 -size -10k(-小于+大于)
+	find 查找目录 -size +10M -size -100M 查找大于10M小于100M的文件
+	find 查找目录 -type d/f/b/c/l/p/s 按类型查找
+2、按文件内容查找
+	grep -r “查找内容” 查找目录
+安装软件
+	1、在线安装
+		sudo apt-get install -- 在线下载安装
+		sudo apt-get remove
+		sudo apt-get update 更新软件列表
+		sudo apt-get clean 清理所有软件安装包(/var/cache/apt/archives 目录下的.deb文件)
+	2、deb包安装
+		sudo dpkg -i xxx.deb 安装软件
+		sudo dpkg -r xxx.deb 卸载软件
+	3、源码安装
+		1、解压缩源码包
+		2、进入安装目录：cd dir
+		3、检查文件是否缺失，创建Makefile，检测编译环境：./configure
+		4、编译源码，生成库和可执行程序：make
+		5、把库和可执行程序安装到系统目录下：sudo make install
+		6、删除和卸载软件：sudo make distclean
+		7、上述安装步骤并不是绝对的，应该先查看的附带的 readme 文件
+	
+修改文件权限
+ 1、文字设定法 chmod [who] {+|-|=} [mode]
+				who :
+					文件所有者： u
+					文件所属组： g
+					其他人： 	 o
+					所有的人： 	 a
+				+： 添加权限
+				-： 减少权限
+				=： 覆盖原来的权限
+				mode：
+					r：读
+					w：写
+					x：执行
+ 2、数字设定法 	-： 没有权限
+				r： 4
+				w:  2
+				x： 1
+
+5种查看文件方式
+ 一、cat 有长度限制
+ 二、more 翻页或换行后不能返回
+ 三、less ctrl+p向前换行，ctrl+b向前翻页
+ 四、head -n 前n行 默认10
+ 五、tail -n 后n行 默认10
+
+ wc 查看文件信息
+ od -t(c d f o u x) 查看二进制文件 以指定格式显示
+ du -h 文件大小
+ df -h 磁盘信息
+
+gzip 不能保留原文件，不能压缩目录，不能打包
+bzip2 -k保留原文件，不能压缩目录，不能打包
+1、tar
+	参数：
+		c   创建 压缩
+		x	释放 解压缩
+		v   显示提示信息 压缩解压缩(可以省略)
+		f   指定压缩文件的名字
+		
+		z	使用gzip的方式压缩文件  .gz
+		j   使用bzip2的方式压缩文件	.bz2
+		
+		压缩
+			tar zcvf 生成的压缩包的名字(xxx.tar.gz)
+			tar jcvf 生成的压缩包的名字(xxx.tar.bz2)
+		解压缩
+			tar jxvf 压缩包名字 (解压到当前目录)
+			tar jxvf 压缩包名字 -C 路径 (解压到指定目录)
+			tar zxvf 压缩包名字
+			tar zxvf 压缩包名字 -C 路径
+2、rar 必须安装
+	参数：
+		压缩：  a
+		解压缩：x
+	压缩：
+		rar a生成的压缩文件的名字(不用指定后缀名) 压缩的文件或目录
+	解压缩：
+		rar x 压缩文件名 (解压缩目录)
+3、zip
+	参数：
+		-r 循环压缩文件夹
+		-d 解压到指定目录
+	压缩：
+		zip (-r) 压缩包名字 压缩的文件或目录
+	解压缩:
+		unzip 压缩包名字 (-d) 解压缩目录
+
+进程管理
+	who 查看当前用户状态
+	查看进程命令ps a(当前操作系统的所有用户的信息)/au/aux
+	管道ps aux | grep xxx(查找到的最后一条是grep所占用的进程，并不是查找到的结果)
+	kill -l 查看对应信号
+	kill -SIGKILL xxx(kill -9 xxx) 杀掉进程
+	env 查看环境变量 env | grep xxx 管道过滤
+	key=value:value:value 用冒号间隔
+网络相关
+	ifconfig 查看ip信息
+	ping 查看两台主机能否连接 ping -c n 前n条
+	nslookup 查看域名对应的ip地址
+用户管理
+	sudo adduser xxx 添加用户(不能包含大写字母)(使用的脚本添加)
+	sudo useradd -s /bin/bash -g Robin -d /home/Robin -m Robin 添加用户(使用命令)
+		s 指定新用户登录时shell类型
+		g 指定所属组，必须已存在
+		d 用户家目录
+		m 用户家目录不存在时，自动创建该目录
+	su xxx 切换用户 exit 退出
+	sudo groupadd xxx 添加组
+	sudo passwd xxx 修改用户密码
+	passwd 修改当前用户密码
+	sudo passwd/sudo passwd root 修改root用户密码
+	sudo deluser+用户名 (不会删除组目录)
+	sudo userdel -r +用户名 (会删掉组目录)
+	vi /etc/passwd 查看用户是否创建成功可以去里面看
+ftp服务器搭建 vsftpd
+	作用：文件的上传和下载
+	sudo vi /etc/vsftpd.cof
+	1、服务器端
+		1.修改配置文件
+			anonymous_enable=NO 是否允许匿名用户登录、
+			local_enable=YES 是否允许本地登录
+			write_enable=YES 实名用户拥有写权限
+			local_umask=022 设置本地掩码为022
+			anon_upload_enable=YES 匿名用户可以在ftp服务器上上传文件
+			anon_mkdir_write_enable=YES 匿名用户可以在服务器上创建目录
+		2.重启服务 
+			sudo service vsftpd restart
+	2、客户端
+		1.实名用户登录
+			ftp + IP(server)
+			 输入用户名
+			 输入密码
+			退出 bye
+			 
+			 文件上传和下载
+				文件的上传：put
+				文件的下载：get
+				不允许操作目录，如果想操作目录 --打包 tar/rar/zip
+		2.匿名用户登录
+			ftp + IP(server)
+			用户名：anonymous
+			密码：直接回车
+			
+			不允许匿名用户在任意目录直接切换
+			只能在一个指定的目录范围内工作
+			需要在ftp服务器上创建一个匿名用户的根目录
+			anon_root=home/xxx/xxx
+		3.lftp客户端访问ftp服务器
+			一个ftp客户端工具，可以上传和下载目录
+			1、匿名登录
+				lftp ip
+				login
+			2、实名登录
+				lftp userName@ip
+				输入密码
+			操作
+				put 上传文件
+				mput上传多个文件
+				get 下载文件
+				mget 下载多个文件
+				mirror 下载整个目录及其子目录
+				mirror -R 上传整个目录及其子目录
+
+nfs服务器搭建
+	sudo apt-get install nfs-kernel-server
+		1、服务器端
+			1.创建共享目录
+			mkdir
+		2.修改配置文件
+			sudo vi /etc/exports
+			/home/xxx/xxx *(rw, sync)  (ro只读 rw读写 sync实时更新)
+		3.重启服务
+			sudo service nfs-kernel-server restart
+	2、客户端
+		1.挂载服务器共享目录
+			mount IP:共享目录 挂载目录
+ssh服务器
+	sudo apt-get install openssh-server
+	查看ssh是否安装 sudo aptitude show openssh-server
+	启动ssh服务：sudo /etc/init.d/ssh start
+	停止ssh服务：sudo /etc/init.d/ssh stop
+	重启ssh服务：sudo /etc/init.d/ssh restart
+	1、服务器端
+	2、客户端
+		1.远程登录：ssh userName@ip
+		2.退出登录：logout
+	scp命令(超级拷贝)
+		scp (-r目录) userName@ip:目标文件绝对路径 保存到本机的目录
+	
+vim命令模式
+	h   j   k   l
+   左  下  上   右
+    0  头
+    $  尾
+    gg 文件起始位置
+    G  文件结束位置
+    nG 第n行
+    x 删除光标后面的字符
+    X 删除光标前面的字符
+    dw 删除单词
+    d$(D) 删除当前行光标前面的内容
+    d0 删除当前行光标前面的内容
+    u 撤销
+    ctrl+r 反撤销
+    (n)yy 复制
+    p 粘贴
+    v 可视模式 复制:y 删除:d
+    /或？ 查找 循环:n
+    # 放在单词上查找
+    :sp (文件名) 水平分屏 ctrl+ww切换屏幕
+	:vsp (文件名) 垂直分屏
+	
+编译工具
+	1、预处理器：cpp  gcc -E hello.c -o hello.i
+	2、编译器：gcc    gcc -S hello.i -o hello.s
+	3、汇编器：as	  gcc -c hello.s -o hello.o
+	4、链接器：ld     gcc hello.o -o hello
+	-I 指定头文件目录
+	-D 指定宏
+	-O1/O2/O3 优化
+	-Wall 提示
+	-g 调试信息
+	-L 指定库的目录 -l 指定库的名字 库名/库的目录 直接写也可以
+	ldd 查看执行文件所依赖的库
+
+静态库制作
+	1、命名规则
+		lib+库的名字+.a
+	2、制作步骤
+		1.生成对应.o文件 .c-->.o   gcc -c
+		2.将生成的.o文件打包 ar rcs + 静态库名字 + 生成的所有.o
+	静态库的优点
+		1、发布程序的时候不需要提供对应的库
+		2、加载速度快
+	静态库缺点：
+		1、库被打包到应用程序中，导致体积比较大
+		2、库发生了改变，需要重新编译程序
+共享库的制作
+	1、命名规则
+		lib+名字+.so
+	2、制作步骤
+		1、生成与位置无关的代码(.o) gcc -FPIC -c
+		2、将.o打包成共享库(动态库) gcc -shared+动态库名字+生成的所有.0
+	3、解决共享库无法加载的问题
+		export LD_LIBRARY_PATH=./lib(临时的)
+		将绝对路径写到.bashrc配置文件中 export LD_LIBRARY_PATH=绝对路径(不推荐)
+		1.需要找到动态链接器的配置文件 /etc/ld.so.conf
+		2.动态库的路径写到配置文件中
+		3.更新 -- sudo ldconfig (-v)
+	动态库的优点
+		1、执行程序体积小
+		2、动态库更新了，不需要重新编译程序(函数接口不变)
+	动态库缺点
+		1、发布程序的时候需要将动态库提供给用户
+		2、动态库没有被打包到程序中，执行速度比较慢
+gdb调试
+	break(b)+行号(+条件): 创建一个断点(条件断点)
+	delete(d)+行号(范围，如2-7): 删除指定断点，不指定则删除所有
+	disable(dis)+行号(范围，如2-7): 停止断点，不指定则停止所有，不会删除断点，enable可以重启断点
+	enable(ena): 重启断点
+	start: 从main函数开始执行
+	
+	run: 直接开始执行到断点
+	next(n): 单步跟踪，函数调用当作一条简单语句执行
+	step(s): 单步跟踪，函数调进入被调用函数体内
+	continue(c): 继续执行，遇到断点暂停
+	finish :跳出当前函数(需取消断点)
+	until(u) 跳出循环
+	
+	p (变量): 查看对应变量的值
+	ptype (变量): 查看变量类型
+	display (变量): 追踪变量的值
+	undisplay (变量编号): 停止追踪变量
+	
+	info(i) break display: 查看断点(变量)等信息
+	quit: 退出gdb
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

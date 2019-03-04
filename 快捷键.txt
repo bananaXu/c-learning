@@ -1,0 +1,9 @@
+ctrl+p 向上浏览历史
+ctrl+n 向下浏览历史
+ctrl+a 光标跳到行首
+ctrl+e 光标跳到行尾
+ctrl+u 删除光标前面的
+ctrl+l或者clear 清屏
+ctrl+c 关掉
+tab 智能提示
+clear / ctrl+l / printf "\033c" 清屏的三种方式

@@ -1,0 +1,75 @@
+linux文件操作相关函数
+	lseek
+		移动文件指针
+	stat函数
+		穿透(追踪)函数--软链接
+	lstat函数
+		不穿透函数
+	access函数
+		access(const char *pathname, int mod);
+		mode类别: R_OK是否有读权限, W_OK是否有写权限, X_OK是否有执行权限, F_OK测试一个文件是否存在
+	chmod函数
+	chown函数
+	truncate函数
+		文件长度 100 
+			第二个参数 20 保留文件前20
+			第二个参数 300 文件拓展到300
+	链接函数
+		link函数
+			创建一个硬链接
+		symlink函数
+			创建一个软链接
+		readlink函数
+			读一个软链接
+		unlink函数
+			删除一个链接，符号链接直接删除，硬链接数-1，如果减为零时，释放数据块和inode
+			如果有进程已打开该文件，并持有文件描述符，则等该进程关闭时，才真正删除文件，利用该特性创建临时文件
+	rename函数
+linux目录操作相关函数
+	chdir函数
+		修改当前进程路径
+	getcwd函数
+		获取当前进程工作目录
+	mkdir函数
+		创建目录 *创建的目录需要有执行权限，否则无法进入
+	rmdir函数
+		删除一个空目录
+	opendir函数
+		打开一个目录
+	readdir函数
+		读目录
+	closedir函数
+		关闭目录
+	文件类型
+		S_IFSOCK 套接字
+		S_IFLINK 符号链接(软链接)
+		S_IFREG  普通文件
+		S_IFBLK  块设备
+		S_IFDIR  目录
+		S_IFCHR  字符设备
+		S_IFIFO  管道
+	fcntl函数 改变已经打开文件的属性
+		复制一个现有的描述符
+		获得/设置文件描述符标记
+		获得/设置文件状态标记
+		获得/设置异步I/O所有权
+		获得/设置记录数
+	dup, dup2函数
+		复制该有的文件描述符
+	dentry, inode关系和对应函数
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
